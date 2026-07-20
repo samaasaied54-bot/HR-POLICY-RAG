@@ -10,24 +10,18 @@ from importlib import import_module
 
 from dotenv import load_dotenv
 from openai import OpenAI
+import streamlit as st  # تم إضافة ستريمليت لجلب المفتاح بأمان
 
 retrieve = import_module("06_retrieve_context")
 
-import os
-from importlib import import_module
-from dotenv import load_dotenv
-from openai import OpenAI
-import streamlit as st
-
-retrieve = import_module("06_retrieve_context")
 load_dotenv()
 
-# 1. قراءة المفتاح من الـ Secrets بشكل آمن
+# 1. جلب المفتاح بشكل ديناميكي وآمن من الـ Secrets أو ملف الـ .env (تم مسح المفتاح القديم المخترق)
 OPENROUTER_API_KEY = st.secrets.get("OPENROUTER_API_KEY", os.getenv("OPENROUTER_API_KEY"))
 
-# 2. إجبار الكود على استخدام موديل مجاني ومستقر حالياً (بدون os.getenv)
-OPENROUTER_MODEL = "meta-llama/llama-3-8b-instruct:free" 
-# لو لا قدر الله منفعش، جرب الموديل ده: "google/gemini-2.0-flash-exp:free"
+# 2. الموديل الافتراضي المستقر والمجاني حالياً على أوبن راوتر
+OPENROUTER_MODEL = "google/gemini-2.5-flash:free"
+
 
 def build_prompt(question, company, context_text):
     return f"""You are a careful corporate-policy assistant for {company}.
@@ -52,8 +46,13 @@ def ask_openrouter(prompt, model=None):
         base_url="https://openrouter.ai/api/v1",
         api_key=OPENROUTER_API_KEY,
     )
+    
+    # 🎯 إجبار الكود على استخدام موديل شغال ومجاني حالياً لتفادي خطأ 404
+    # حتى لو ملف streamlit_app.py بيبعت اسم موديل قديم ومحذوف
+    chosen_model = "google/gemini-2.5-flash:free"
+    
     response = client.chat.completions.create(
-        model=model or OPENROUTER_MODEL,
+        model=chosen_model,
         messages=[{"role": "user", "content": prompt}],
         temperature=0,
     )
