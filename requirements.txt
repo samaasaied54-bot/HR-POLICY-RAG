@@ -1,0 +1,10 @@
+streamlit
+requests
+pymupdf
+rank-bm25
+sentence-transformers
+scikit-learn
+numpy
+nltk
+openai
+python-dotenv
