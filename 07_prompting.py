@@ -17,17 +17,17 @@ import os
 from importlib import import_module
 from dotenv import load_dotenv
 from openai import OpenAI
-import streamlit as st  # استيراد مكتبة ستريمليت لقراءة المفتاح السري
+import streamlit as st
 
 retrieve = import_module("06_retrieve_context")
 load_dotenv()
 
-# 1. قراءة المفتاح بشكل ديناميكي من Streamlit Secrets أو ملف الـ .env بدون كتابته صراحة
+# 1. قراءة المفتاح من الـ Secrets بشكل آمن
 OPENROUTER_API_KEY = st.secrets.get("OPENROUTER_API_KEY", os.getenv("OPENROUTER_API_KEY"))
 
-# 2. تغيير الموديل الافتراضي لموديل مجاني ومستقر حالياً على أوبن راوتر
-OPENROUTER_MODEL = os.getenv("OPENROUTER_MODEL", "google/gemini-2.0-flash-exp:free")
-# يمكنك أيضاً تجربة: "meta-llama/llama-3-8b-instruct:free" إذا استمر الخطأ
+# 2. إجبار الكود على استخدام موديل مجاني ومستقر حالياً (بدون os.getenv)
+OPENROUTER_MODEL = "meta-llama/llama-3-8b-instruct:free" 
+# لو لا قدر الله منفعش، جرب الموديل ده: "google/gemini-2.0-flash-exp:free"
 
 def build_prompt(question, company, context_text):
     return f"""You are a careful corporate-policy assistant for {company}.
