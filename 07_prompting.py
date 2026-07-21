@@ -10,17 +10,14 @@ from importlib import import_module
 
 from dotenv import load_dotenv
 from openai import OpenAI
-import streamlit as st  # تم إضافة ستريمليت لجلب المفتاح بأمان
+import streamlit as st
 
 retrieve = import_module("06_retrieve_context")
 
 load_dotenv()
 
-# 1. جلب المفتاح بشكل ديناميكي وآمن من الـ Secrets أو ملف الـ .env (تم مسح المفتاح القديم المخترق)
+# جلب المفتاح بأمان من Streamlit Secrets أو ملف الـ .env
 OPENROUTER_API_KEY = st.secrets.get("OPENROUTER_API_KEY", os.getenv("OPENROUTER_API_KEY"))
-
-# 2. الموديل الافتراضي المستقر والمجاني حالياً على أوبن راوتر
-OPENROUTER_MODEL = "google/gemini-2.5-flash:free"
 
 
 def build_prompt(question, company, context_text):
@@ -47,16 +44,25 @@ def ask_openrouter(prompt, model=None):
         api_key=OPENROUTER_API_KEY,
     )
     
-    # 🎯 إجبار الكود على استخدام موديل شغال ومجاني حالياً لتفادي خطأ 404
-    # حتى لو ملف streamlit_app.py بيبعت اسم موديل قديم ومحذوف
-    chosen_model = "google/gemini-2.5-flash:free"
+    # 1. الموديل الأساسي المجاني والمتاح حالياً
+    primary_model = "google/gemini-2.0-flash-exp:free"
     
-    response = client.chat.completions.create(
-        model=chosen_model,
-        messages=[{"role": "user", "content": prompt}],
-        temperature=0,
-    )
-    return response.choices[0].message.content
+    try:
+        response = client.chat.completions.create(
+            model=primary_model,
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0,
+        )
+        return response.choices[0].message.content
+    except Exception:
+        # 2. خطة طوارئ: استخدام موديل Qwen المجاني في حال انشغال الموديل الأول
+        fallback_model = "qwen/qwen-2.5-7b-instruct:free"
+        response = client.chat.completions.create(
+            model=fallback_model,
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0,
+        )
+        return response.choices[0].message.content
 
 
 def answer_question(index, question, company, model=None):
@@ -74,4 +80,5 @@ if __name__ == "__main__":
     build_index = import_module("05_build_index").build_full_index
     index = build_index()
     answer, sources = answer_question(index, "Why do employee desks have wheels?", company="Valve")
+    print(answer)ndex, "Why do employee desks have wheels?", company="Valve")
     print(answer)
