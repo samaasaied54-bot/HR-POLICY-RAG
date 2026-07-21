@@ -2,8 +2,7 @@
 Step 7: Prompting + Generation via OpenRouter
 ------------------------------------------------
 Builds a grounded prompt from the retrieved context and sends it to an
-LLM through OpenRouter (https://openrouter.ai), which gives access to
-many models behind one API key.
+LLM through OpenRouter (https://openrouter.ai).
 """
 import os
 from importlib import import_module
@@ -16,7 +15,7 @@ retrieve = import_module("06_retrieve_context")
 
 load_dotenv()
 
-# جلب المفتاح بأمان من Streamlit Secrets أو ملف الـ .env
+# Get API key safely from Streamlit secrets or environment
 OPENROUTER_API_KEY = st.secrets.get("OPENROUTER_API_KEY", os.getenv("OPENROUTER_API_KEY"))
 
 
@@ -40,15 +39,13 @@ Answer:"""
 
 def ask_openrouter(prompt, model=None):
     if not OPENROUTER_API_KEY:
-        return "⚠️ لم يتم العثور على مفتاح API الخاص بـ OpenRouter. يرجى إضافته في Streamlit Secrets."
+        return "Missing OPENROUTER_API_KEY in Streamlit Secrets."
 
     client = OpenAI(
         base_url="https://openrouter.ai/api/v1",
         api_key=OPENROUTER_API_KEY,
     )
     
-    # 🎯 قائمة بالموديلات المجانية المتاحة حالياً على OpenRouter
-    # الكود سيتنقل بينها تلقائياً لضمان عدم توقف التطبيق أبداً
     candidate_models = [
         "meta-llama/llama-3.3-70b-instruct:free",
         "google/gemini-2.0-flash-lite-preview-02-05:free",
@@ -57,7 +54,6 @@ def ask_openrouter(prompt, model=None):
         "mistralai/mistral-7b-instruct:free",
     ]
     
-    # لو تم إرسال موديل محدد نضعه في بداية القائمة
     if model:
         candidate_models.insert(0, model)
 
@@ -72,9 +68,9 @@ def ask_openrouter(prompt, model=None):
             return response.choices[0].message.content
         except Exception as e:
             last_error = e
-            continue  # الانتقال للموديل التالي فوراً عند حدوث خطأ
+            continue
 
-    return f"⚠️ تعذر الاتصال بموديلات OpenRouter المجانية حالياً. التفاصيل: {last_error}"
+    return f"Error contacting OpenRouter models: {last_error}"
 
 
 def answer_question(index, question, company, model=None):
@@ -92,4 +88,4 @@ if __name__ == "__main__":
     build_index = import_module("05_build_index").build_full_index
     index = build_index()
     answer, sources = answer_question(index, "Why do employee desks have wheels?", company="Valve")
-    print(answer)ل
+    print(answer)
