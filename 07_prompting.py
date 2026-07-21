@@ -1,10 +1,11 @@
 """
-Step 7: Prompting + Generation via OpenRouter
-------------------------------------------------
+Step 7: Prompting + Generation via OpenRouter (100% Dynamic & Free)
+-------------------------------------------------------------------
 Builds a grounded prompt from the retrieved context and sends it to an
-LLM through OpenRouter (https://openrouter.ai).
+LLM through OpenRouter (https://openrouter.ai) using ONLY free models.
 """
 import os
+import requests
 from importlib import import_module
 
 from dotenv import load_dotenv
@@ -15,7 +16,7 @@ retrieve = import_module("06_retrieve_context")
 
 load_dotenv()
 
-# Get API key safely from Streamlit secrets or environment
+# جلب المفتاح بأمان من Streamlit Secrets أو ملف البيئة
 OPENROUTER_API_KEY = st.secrets.get("OPENROUTER_API_KEY", os.getenv("OPENROUTER_API_KEY"))
 
 
@@ -37,28 +38,45 @@ Context:
 Answer:"""
 
 
+def get_available_free_models():
+    """
+    دالة ذكية تجلب قائمة الموديلات المجانية المتاحة والنشطة حالياً
+    من OpenRouter مباشرة لمنع خطأ 404 للأبد.
+    """
+    fallback_free_models = [
+        "meta-llama/llama-3.2-3b-instruct:free",
+        "qwen/qwen-2.5-7b-instruct:free",
+        "google/gemini-2.0-flash-lite-001:free",
+    ]
+    try:
+        response = requests.get("https://openrouter.ai/api/v1/models", timeout=5)
+        if response.status_code == 200:
+            data = response.json().get("data", [])
+            # تصفية الموديلات التي ينتهي اسمها بـ :free فقط
+            online_free_models = [m["id"] for m in data if m["id"].endswith(":free")]
+            if online_free_models:
+                return online_free_models
+    except Exception:
+        pass
+    
+    return fallback_free_models
+
+
 def ask_openrouter(prompt, model=None):
     if not OPENROUTER_API_KEY:
-        return "Missing OPENROUTER_API_KEY in Streamlit Secrets."
+        return "⚠️ مفتاح OPENROUTER_API_KEY غير موجود في Streamlit Secrets."
 
     client = OpenAI(
         base_url="https://openrouter.ai/api/v1",
         api_key=OPENROUTER_API_KEY,
     )
     
-    # قائمة بأسماء أحدث الموديلات المجانية الشغالة حالياً على OpenRouter
-    candidate_models = [
-        "google/gemini-2.0-flash-lite-preview-02-05:free",
-        "meta-llama/llama-3.3-70b-instruct:free",
-        "qwen/qwen-2.5-7b-instruct:free",
-        "deepseek/deepseek-r1:free",
-    ]
-    
-    if model and model not in candidate_models:
-        candidate_models.insert(0, model)
+    # جلب الموديلات المجانية المتاحة لايف من السيرفر
+    free_models = get_available_free_models()
 
     last_error = None
-    for m in candidate_models:
+    # التجربة في الموديلات المجانية المتوفرة واحد تلو الآخر
+    for m in free_models:
         try:
             response = client.chat.completions.create(
                 model=m,
@@ -70,7 +88,7 @@ def ask_openrouter(prompt, model=None):
             last_error = e
             continue
 
-    return f"Error contacting OpenRouter models: {last_error}"
+    return f"⚠️ تعذر الاتصال بموديلات OpenRouter المجانية: {last_error}"
 
 
 def answer_question(index, question, company, model=None):
