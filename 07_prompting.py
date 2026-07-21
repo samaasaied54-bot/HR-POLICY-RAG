@@ -3,24 +3,21 @@ Step 7: Prompting + Generation via OpenRouter
 ------------------------------------------------
 Builds a grounded prompt from the retrieved context and sends it to an
 LLM through OpenRouter (https://openrouter.ai), which gives access to
-many models (OpenAI, Anthropic, Google, Meta, ...) behind one API key.
+many models behind one API key.
 """
 import os
 from importlib import import_module
 
 from dotenv import load_dotenv
 from openai import OpenAI
-import streamlit as st  # تم إضافة ستريمليت لجلب المفتاح بأمان
+import streamlit as st
 
 retrieve = import_module("06_retrieve_context")
 
 load_dotenv()
 
-# 1. جلب المفتاح بشكل ديناميكي وآمن من الـ Secrets أو ملف الـ .env (تم مسح المفتاح القديم المخترق)
+# جلب المفتاح بأمان من Streamlit Secrets أو ملف الـ .env
 OPENROUTER_API_KEY = st.secrets.get("OPENROUTER_API_KEY", os.getenv("OPENROUTER_API_KEY"))
-
-# 2. الموديل الافتراضي المستقر والمجاني حالياً على أوبن راوتر
-OPENROUTER_MODEL = "google/gemini-2.5-flash:free"
 
 
 def build_prompt(question, company, context_text):
@@ -42,21 +39,42 @@ Answer:"""
 
 
 def ask_openrouter(prompt, model=None):
+    if not OPENROUTER_API_KEY:
+        return "⚠️ لم يتم العثور على مفتاح API الخاص بـ OpenRouter. يرجى إضافته في Streamlit Secrets."
+
     client = OpenAI(
         base_url="https://openrouter.ai/api/v1",
         api_key=OPENROUTER_API_KEY,
     )
     
-    # 🎯 إجبار الكود على استخدام موديل شغال ومجاني حالياً لتفادي خطأ 404
-    # حتى لو ملف streamlit_app.py بيبعت اسم موديل قديم ومحذوف
-    chosen_model = "google/gemini-2.5-flash:free"
+    # 🎯 قائمة بالموديلات المجانية المتاحة حالياً على OpenRouter
+    # الكود سيتنقل بينها تلقائياً لضمان عدم توقف التطبيق أبداً
+    candidate_models = [
+        "meta-llama/llama-3.3-70b-instruct:free",
+        "google/gemini-2.0-flash-lite-preview-02-05:free",
+        "deepseek/deepseek-r1:free",
+        "qwen/qwen-2.5-7b-instruct:free",
+        "mistralai/mistral-7b-instruct:free",
+    ]
     
-    response = client.chat.completions.create(
-        model=chosen_model,
-        messages=[{"role": "user", "content": prompt}],
-        temperature=0,
-    )
-    return response.choices[0].message.content
+    # لو تم إرسال موديل محدد نضعه في بداية القائمة
+    if model:
+        candidate_models.insert(0, model)
+
+    last_error = None
+    for m in candidate_models:
+        try:
+            response = client.chat.completions.create(
+                model=m,
+                messages=[{"role": "user", "content": prompt}],
+                temperature=0,
+            )
+            return response.choices[0].message.content
+        except Exception as e:
+            last_error = e
+            continue  # الانتقال للموديل التالي فوراً عند حدوث خطأ
+
+    return f"⚠️ تعذر الاتصال بموديلات OpenRouter المجانية حالياً. التفاصيل: {last_error}"
 
 
 def answer_question(index, question, company, model=None):
@@ -74,4 +92,4 @@ if __name__ == "__main__":
     build_index = import_module("05_build_index").build_full_index
     index = build_index()
     answer, sources = answer_question(index, "Why do employee desks have wheels?", company="Valve")
-    print(answer)
+    print(answer)ل
