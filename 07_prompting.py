@@ -46,15 +46,15 @@ def ask_openrouter(prompt, model=None):
         api_key=OPENROUTER_API_KEY,
     )
     
+    # قائمة بأسماء أحدث الموديلات المجانية الشغالة حالياً على OpenRouter
     candidate_models = [
-        "meta-llama/llama-3.3-70b-instruct:free",
         "google/gemini-2.0-flash-lite-preview-02-05:free",
-        "deepseek/deepseek-r1:free",
+        "meta-llama/llama-3.3-70b-instruct:free",
         "qwen/qwen-2.5-7b-instruct:free",
-        "mistralai/mistral-7b-instruct:free",
+        "deepseek/deepseek-r1:free",
     ]
     
-    if model:
+    if model and model not in candidate_models:
         candidate_models.insert(0, model)
 
     last_error = None
