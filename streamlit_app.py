@@ -81,3 +81,42 @@ if user_question:
                     st.caption(source["chunk_text"][:300] + "...")
 
     st.session_state.messages[selected_company].append({"role": "assistant", "content": answer})
+
+import streamlit as st
+
+# 🎯 تصميم مخصص بـ CSS
+st.markdown("""
+    <style>
+    /* تغيير نوع الخط في الصفحة كلها */
+    html, body, [class*="css"] {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    
+    /* جعل الحواف دائرية وإضافة ظل خفيف للـ Selectbox والـ Input */
+    .stSelectbox div[data-baseweb="select"], .stTextInput input {
+        border-radius: 12px !important;
+        border: 1px solid #3B82F6 !important;
+        box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.05);
+    }
+    
+    /* تغيير شكل زرار الإرسال */
+    .stButton>button {
+        border-radius: 10px;
+        background-color: #2563EB;
+        color: white;
+        font-weight: bold;
+        transition: all 0.3s ease;
+    }
+    .stButton>button:hover {
+        background-color: #1D4ED8;
+        transform: translateY(-2px);
+    }
+    
+    /* إضافة كارت أنيق حول إجابات البوت */
+    .stChatMessage {
+        border-radius: 15px;
+        padding: 12px;
+        margin-bottom: 10px;
+    }
+    </style>
+""", unsafe_allow_html=True)
